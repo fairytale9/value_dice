@@ -20,16 +20,16 @@ wget -P value_dice/datasets/ https://storage.googleapis.com/gresearch/value_dice
 wget -P value_dice/datasets/ https://storage.googleapis.com/gresearch/value_dice/datasets/Walker2d-v2.npz
 
 declare -a env_names=("HalfCheetah-v2"  "Hopper-v2"  "Walker2d-v2" "Ant-v2")
-declare -a algos=("bc" "dac" "value_dice")
+declare -a algos=("dac")
 
-expert_dir="./datasets/"
+expert_dir="./value_dice/datasets/"
 save_dir="./save/"
 
 for algo in "${algos[@]}"
 do
   for env_name in "${env_names[@]}"
   do
-    for ((seed=0;seed<10;seed+=1))
+    for ((seed=0;seed<5;seed+=1))
     do
       python -m value_dice.train_eval \
         --expert_dir $expert_dir \
