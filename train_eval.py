@@ -52,7 +52,7 @@ flags.DEFINE_float('tau', 0.005,
                    'Soft update coefficient for the target network.')
 flags.DEFINE_integer('hidden_size', 256, 'Hidden size.')
 flags.DEFINE_integer('updates_per_step', 5, 'Updates per time step.')
-flags.DEFINE_integer('max_timesteps', int(1e5), 'Max timesteps to train.')
+flags.DEFINE_integer('max_timesteps', int(2e5), 'Max timesteps to train.')
 flags.DEFINE_integer('num_trajectories', 1, 'Number of trajectories to use.')
 flags.DEFINE_integer('num_random_actions', int(2e3),
                      'Fill replay buffer with N random actions.')
@@ -205,7 +205,7 @@ def main(_):
       replay_buffer.as_dataset(sample_batch_size=FLAGS.sample_batch_size))
 
   policy_replay_buffer = tf_uniform_replay_buffer.TFUniformReplayBuffer(
-      spec, batch_size=1, max_length=FLAGS.max_timesteps * 2)
+      spec, batch_size=1, max_length=int(1e3))
 
   policy_replay_buffer_iter = iter(
       policy_replay_buffer.as_dataset(
@@ -357,7 +357,9 @@ def main(_):
 
       obs = next_obs
 
-      # if       
+      # use data from N recent policies
+      if total_timesteps % 500 != 0:
+        continue
 
       # training
       if total_timesteps >= FLAGS.start_training_timesteps:
