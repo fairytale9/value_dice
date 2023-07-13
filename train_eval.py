@@ -53,6 +53,8 @@ flags.DEFINE_float('tau', 0.005,
 flags.DEFINE_integer('hidden_size', 256, 'Hidden size.')
 flags.DEFINE_integer('updates_per_step', 50, 'Updates per time step.')
 flags.DEFINE_integer('max_timesteps', int(2e5), 'Max timesteps to train.')
+flags.DEFINE_integer('num_recent_policies, int(0), 'how many off-policy data to use')
+flags.DEFINE_integer('transitions_per_policy', int(1e3), 'number of online data to collect')
 flags.DEFINE_integer('num_trajectories', 1, 'Number of trajectories to use.')
 flags.DEFINE_integer('num_random_actions', int(2e3),
                      'Fill replay buffer with N random actions.')
@@ -68,8 +70,6 @@ flags.DEFINE_integer('log_interval', int(1e3), 'Log every N timesteps.')
 flags.DEFINE_integer('eval_interval', int(1e3), 'Evaluate every N timesteps.')
 flags.DEFINE_enum('algo', 'value_dice', ['bc', 'dac', 'value_dice'],
                   'Algorithm to use to compute occupancy ration.')
-flags.DEFINE_integer('absorbing_per_episode', 10,
-                     'A number of absorbing states per episode to add.')
 
 
 def _update_pbar_msg(pbar, total_timesteps):
@@ -187,7 +187,7 @@ def main(_):
   # We need to store at most twice more transition due to
   # an extra absorbing to itself transition.
   replay_buffer = tf_uniform_replay_buffer.TFUniformReplayBuffer(
-      spec, batch_size=1, max_length=FLAGS.max_timesteps * 2)
+      spec, batch_size=1, max_length=FLAGS.max_timesteps + int(expert_states.shape[0]))
 
   for i in range(expert_states.shape[0]):
     # Overwrite rewards for safety. We still have to add them to the replay
@@ -200,7 +200,7 @@ def main(_):
       replay_buffer.as_dataset(sample_batch_size=FLAGS.sample_batch_size))
 
   policy_replay_buffer = tf_uniform_replay_buffer.TFUniformReplayBuffer(
-      spec, batch_size=1, max_length=int(1e3))
+      spec, batch_size=1, max_length=FLAGS.num_recent_policies * FLAGS.transitions_per_policy)
 
   policy_replay_buffer_iter = iter(
       policy_replay_buffer.as_dataset(
@@ -324,8 +324,6 @@ def main(_):
       # done caused by episode truncation.
       truncated_done = done and episode_timesteps + 1 == env._max_episode_steps  # pylint: disable=protected-access
 
-      if done and not truncated_done:
-        next_obs = env.get_absorbing_state()
 
       # Overwrite rewards for safety. We still have to add them to the replay
       # buffer to maintain the same interface. Also always use a zero mask
@@ -333,17 +331,7 @@ def main(_):
       add_samples_to_replay_buffer(replay_buffer, obs, action, next_obs)
 
       add_samples_to_replay_buffer(policy_replay_buffer, obs, action, next_obs)
-      if done and not truncated_done:
-        # Add several absobrsing states to absorbing states transitions.
-        for abs_i in range(FLAGS.absorbing_per_episode):
-          if abs_i + episode_timesteps < env._max_episode_steps:  # pylint: disable=protected-access
-            obs = env.get_absorbing_state()
-            action = env.action_space.sample()
-            next_obs = env.get_absorbing_state()
-
-            add_samples_to_replay_buffer(replay_buffer, obs, action, next_obs)
-            add_samples_to_replay_buffer(policy_replay_buffer, obs, action,
-                                         next_obs)
+      
 
       episode_return += reward
       episode_timesteps += 1
@@ -353,7 +341,7 @@ def main(_):
       obs = next_obs
 
       # use data from N recent policies
-      if total_timesteps % 500 != 0:
+      if total_timesteps % FLAGS.transitions_per_policy != 0:
         continue
 
       # training
