@@ -173,12 +173,7 @@ def main(_):
       break
     unwrap_env = unwrap_env.env
 
-  (expert_states, expert_actions, expert_next_states,
-   expert_dones) = data_utils.add_absorbing_states(expert_states,
-                                                   expert_actions,
-                                                   expert_next_states,
-                                                   expert_dones, env)
-
+  
   spec = (
       tensor_spec.TensorSpec([env.observation_space.shape[0]], tf.float32,
                              'observation'),
