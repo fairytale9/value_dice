@@ -53,7 +53,7 @@ flags.DEFINE_float('tau', 0.005,
 flags.DEFINE_integer('hidden_size', 256, 'Hidden size.')
 flags.DEFINE_integer('updates_per_step', 50, 'Updates per time step.')
 flags.DEFINE_integer('max_timesteps', int(2e5), 'Max timesteps to train.')
-flags.DEFINE_integer('num_recent_policies, int(0), 'how many off-policy data to use')
+flags.DEFINE_integer('num_recent_policies, int(1), 'how many off-policy data to use')
 flags.DEFINE_integer('transitions_per_policy', int(1e3), 'number of online data to collect')
 flags.DEFINE_integer('num_trajectories', 1, 'Number of trajectories to use.')
 flags.DEFINE_integer('num_random_actions', int(2e3),
