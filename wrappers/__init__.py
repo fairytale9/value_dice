@@ -16,7 +16,6 @@
 """A collection of gym wrappers."""
 
 import gym
-from value_dice.wrappers.absorbing_wrapper import AbsorbingWrapper
 from value_dice.wrappers.normalize_action_wrapper import check_and_normalize_box_actions
 from value_dice.wrappers.normalize_action_wrapper import NormalizeBoxActionWrapper
 from value_dice.wrappers.normalize_state_wrapper import NormalizeStateWrapper
@@ -41,4 +40,4 @@ def create_il_env(env_name, seed, shift, scale):
   if shift is not None:
     env = NormalizeStateWrapper(env, shift=shift, scale=scale)
 
-  return AbsorbingWrapper(env)
+  return env
